@@ -1,4 +1,5 @@
 import csv
+import psycopg2
 
 
 def get_data_from_csv(file_path: str) -> list:
@@ -20,3 +21,25 @@ def get_data_from_csv(file_path: str) -> list:
             data.append(row)
 
     return data
+
+
+def append_data_to_sql(data: list) -> None:
+    """
+    Add data to SQL-table.
+    :param data: list with data
+    :return: None
+    """
+    connection = psycopg2.connect(host=user_host, database='north', user=username, password=user_password)
+    try:
+        with connection:
+
+            with connection.cursor() as cur:
+
+                query = "INSERT INTO customers VALUES (" + '%s,' * len(data[0])
+                query = query[:-1] + ")"
+
+                for item in data:
+                    cur.execute(query, tuple(item))
+
+    finally:
+        connection.close()
