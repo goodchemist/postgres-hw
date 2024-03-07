@@ -23,10 +23,11 @@ def get_data_from_csv(file_path: str) -> list:
     return data
 
 
-def append_data_to_sql(data: list) -> None:
+def append_data_to_sql(data: list, name_table: str) -> None:
     """
     Add data to SQL-table.
     :param data: list with data
+    :param name_table: name of SQL-table
     :return: None
     """
     connection = psycopg2.connect(host=user_host, database='north', user=username, password=user_password)
@@ -35,7 +36,7 @@ def append_data_to_sql(data: list) -> None:
 
             with connection.cursor() as cur:
 
-                query = "INSERT INTO customers VALUES (" + '%s,' * len(data[0])
+                query = ("INSERT INTO " + name_table + " VALUES (") + '%s,' * len(data[0])
                 query = query[:-1] + ")"
 
                 for item in data:
