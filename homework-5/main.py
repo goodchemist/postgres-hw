@@ -29,7 +29,7 @@ def main():
                 insert_suppliers_data(cur, suppliers)
                 print("Данные в suppliers успешно добавлены")
 
-                add_foreign_keys(cur, json_file)
+                add_foreign_keys(cur)
                 print(f"FOREIGN KEY успешно добавлены")
 
     except (Exception, psycopg2.DatabaseError) as error:
@@ -118,16 +118,25 @@ def insert_suppliers_data(cur, suppliers: list[dict]) -> None:
     :return: None
     """
     for j, supplier in enumerate(suppliers, start=1):
-        for product in supplier['products']:
-            cur.execute("INSERT INTO suppliers (supplier_id, company_name, contact, address, phone, fax, homepage, "
-                        "products) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                        (j, supplier['company_name'], supplier['contact'], supplier['address'], supplier['phone'],
-                         supplier['fax'], supplier['homepage'], product))
+        cur.execute("INSERT INTO suppliers (supplier_id, company_name, contact, address, phone, fax, homepage, "
+                    "products) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (j, supplier['company_name'], supplier['contact'], supplier['address'], supplier['phone'],
+                     supplier['fax'], supplier['homepage'], ', '.join(supplier['products'])))
 
 
-def add_foreign_keys(cur, json_file) -> None:
-    """Добавляет foreign key со ссылкой на supplier_id в таблицу products."""
-    pass
+def add_foreign_keys(cur) -> None:
+    """
+    Добавляет foreign key со ссылкой на supplier_id в таблицу products.
+    :param cur: курсор
+    :return: None
+    """
+    """"""
+    cur.execute("ALTER TABLE products ADD COLUMN supplier_id int")
+    cur.execute("UPDATE products SET supplier_id = (SELECT s.supplier_id FROM suppliers s "
+                "WHERE products.product_name IN (SELECT unnest(string_to_array(s.products, ', '))) LIMIT 1)")
+    cur.execute("ALTER TABLE suppliers ADD CONSTRAINT unique_supplier_id UNIQUE (supplier_id)")
+    cur.execute(
+        "ALTER TABLE products ADD CONSTRAINT fk_supplier_id FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)")
 
 
 if __name__ == '__main__':
