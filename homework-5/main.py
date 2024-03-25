@@ -12,8 +12,8 @@ def main():
 
     params = config()
 
-    create_database(params, db_name)
-    print(f"БД {db_name} успешно создана")
+    #create_database(params, db_name)
+    #print(f"БД {db_name} успешно создана")
 
     params.update({'dbname': db_name})
     try:
@@ -32,7 +32,7 @@ def main():
                 add_foreign_keys(cur, json_file)
                 print(f"FOREIGN KEY успешно добавлены")
 
-    except(Exception, psycopg2.DatabaseError) as error:
+    except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
         if conn is not None:
@@ -61,9 +61,23 @@ def create_database(params, db_name) -> None:
 
 
 def execute_sql_script(cur, script_file) -> None:
-    """Выполняет скрипт из файла для заполнения БД данными."""
+    """
+    Выполняет скрипт из файла для заполнения БД данными.
+    :param cur: курсор
+    :param script_file: файл с SQL запросами
+    :return: None
+    """
+    with open(script_file, 'r') as file:
+        lines = file.readlines()
 
+    clean_lines = [line for line in lines if not line.strip().startswith('--')]
 
+    sql_commands = '\n'.join(clean_lines).split(';')
+
+    for command in sql_commands:
+
+        if command.strip():  # Проверяет, не является ли команда пустой
+            cur.execute(command)
 
 def create_suppliers_table(cur) -> None:
     """Создает таблицу suppliers."""
