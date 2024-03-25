@@ -12,8 +12,8 @@ def main():
 
     params = config()
 
-    #create_database(params, db_name)
-    #print(f"БД {db_name} успешно создана")
+    create_database(params, db_name)
+    print(f"БД {db_name} успешно создана")
 
     params.update({'dbname': db_name})
     try:
@@ -79,9 +79,23 @@ def execute_sql_script(cur, script_file) -> None:
         if command.strip():  # Проверяет, не является ли команда пустой
             cur.execute(command)
 
+
 def create_suppliers_table(cur) -> None:
-    """Создает таблицу suppliers."""
-    pass
+    """
+    Создает таблицу suppliers.
+    :param cur: курсор
+    :return: None
+    """
+    cur.execute("""CREATE TABLE IF NOT EXISTS suppliers (
+    company_name varchar(60) NOT NULL,
+    contact varchar(60) NOT NULL,
+    address varchar(60) NOT NULL,
+    phone varchar(24) NOT NULL,
+    fax varchar(24) NOT NULL,
+    homepage varchar(40) NOT NULL,
+    products text NOT NULL
+    )
+    """)
 
 
 def get_suppliers_data(json_file: str) -> list[dict]:
