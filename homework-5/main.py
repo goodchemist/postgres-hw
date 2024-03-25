@@ -11,7 +11,6 @@ def main():
     db_name = 'my_new_db'
 
     params = config()
-    conn = None
 
     create_database(params, db_name)
     print(f"БД {db_name} успешно создана")
@@ -30,10 +29,10 @@ def main():
                 insert_suppliers_data(cur, suppliers)
                 print("Данные в suppliers успешно добавлены")
 
-                add_foreign_keys(cur, json_file)
+                add_foreign_keys(cur)
                 print(f"FOREIGN KEY успешно добавлены")
 
-    except(Exception, psycopg2.DatabaseError) as error:
+    except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
         if conn is not None:
@@ -41,32 +40,104 @@ def main():
 
 
 def create_database(params, db_name) -> None:
-    """Создает новую базу данных."""
-    pass
+    """
+    Создает новую базу данных.
+    :param params: параметры для подключения
+    :param db_name: имя базы данных
+    :return: None
+    """
+    conn = None
+    try:
+        conn = psycopg2.connect(**params)
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute(f"CREATE DATABASE {db_name}")
+    except (Exception, psycopg2.DatabaseError) as error:
+        conn.rollback()
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+
 
 def execute_sql_script(cur, script_file) -> None:
-    """Выполняет скрипт из файла для заполнения БД данными."""
+    """
+    Выполняет скрипт из файла для заполнения БД данными.
+    :param cur: курсор
+    :param script_file: файл с SQL запросами
+    :return: None
+    """
+    with open(script_file, 'r') as file:
+        lines = file.readlines()
 
+    clean_lines = [line for line in lines if not line.strip().startswith('--')]
+
+    sql_commands = '\n'.join(clean_lines).split(';')
+
+    for command in sql_commands:
+
+        if command.strip():  # Проверяет, не является ли команда пустой
+            cur.execute(command)
 
 
 def create_suppliers_table(cur) -> None:
-    """Создает таблицу suppliers."""
-    pass
+    """
+    Создает таблицу suppliers.
+    :param cur: курсор
+    :return: None
+    """
+    cur.execute("""CREATE TABLE IF NOT EXISTS suppliers (
+    supplier_id serial,
+    company_name varchar(100) NOT NULL,
+    contact varchar(100) NOT NULL,
+    address varchar(100) NOT NULL,
+    phone varchar(30) NOT NULL,
+    fax varchar(30) NOT NULL,
+    homepage varchar(100) NOT NULL,
+    products text NOT NULL,
+    
+    CONSTRAINT pk_supplier_id PRIMARY KEY(supplier_id)
+    )
+    """)
 
 
 def get_suppliers_data(json_file: str) -> list[dict]:
-    """Извлекает данные о поставщиках из JSON-файла и возвращает список словарей с соответствующей информацией."""
-    pass
+    """
+    Извлекает данные о поставщиках из JSON-файла и возвращает список словарей с соответствующей информацией.
+    :param json_file: JSON-файл с данными
+    :return: список со словарями
+    """
+    with open(json_file, 'r') as file:
+        suppliers_data = json.load(file)
+    return suppliers_data
 
 
 def insert_suppliers_data(cur, suppliers: list[dict]) -> None:
-    """Добавляет данные из suppliers в таблицу suppliers."""
-    pass
+    """
+    Добавляет данные из suppliers в таблицу suppliers.
+    :param cur: курсор
+    :param suppliers: список со словарями
+    :return: None
+    """
+    for j, supplier in enumerate(suppliers, start=1):
+        cur.execute("INSERT INTO suppliers (supplier_id, company_name, contact, address, phone, fax, homepage, "
+                    "products) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (j, supplier['company_name'], supplier['contact'], supplier['address'], supplier['phone'],
+                     supplier['fax'], supplier['homepage'], ', '.join(supplier['products'])))
 
 
-def add_foreign_keys(cur, json_file) -> None:
-    """Добавляет foreign key со ссылкой на supplier_id в таблицу products."""
-    pass
+def add_foreign_keys(cur) -> None:
+    """
+    Добавляет foreign key со ссылкой на supplier_id в таблицу products.
+    :param cur: курсор
+    :return: None
+    """
+    """"""
+    cur.execute("ALTER TABLE products ADD COLUMN supplier_id int")
+    cur.execute("UPDATE products SET supplier_id = (SELECT s.supplier_id FROM suppliers s "
+                "WHERE products.product_name IN (SELECT unnest(string_to_array(s.products, ', '))) LIMIT 1)")
+    cur.execute(
+        "ALTER TABLE products ADD CONSTRAINT fk_supplier_id FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)")
 
 
 if __name__ == '__main__':
