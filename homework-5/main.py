@@ -87,25 +87,41 @@ def create_suppliers_table(cur) -> None:
     :return: None
     """
     cur.execute("""CREATE TABLE IF NOT EXISTS suppliers (
-    company_name varchar(60) NOT NULL,
-    contact varchar(60) NOT NULL,
-    address varchar(60) NOT NULL,
-    phone varchar(24) NOT NULL,
-    fax varchar(24) NOT NULL,
-    homepage varchar(40) NOT NULL,
+    company_name varchar(100) NOT NULL,
+    contact varchar(100) NOT NULL,
+    address varchar(100) NOT NULL,
+    phone varchar(30) NOT NULL,
+    fax varchar(30) NOT NULL,
+    homepage varchar(100) NOT NULL,
     products text NOT NULL
     )
     """)
 
 
 def get_suppliers_data(json_file: str) -> list[dict]:
-    """Извлекает данные о поставщиках из JSON-файла и возвращает список словарей с соответствующей информацией."""
-    pass
+    """
+    Извлекает данные о поставщиках из JSON-файла и возвращает список словарей с соответствующей информацией.
+    :param json_file: JSON-файл с данными
+    :return: список со словарями
+    """
+    with open(json_file, 'r') as file:
+        suppliers_data = json.load(file)
+    return suppliers_data
 
 
 def insert_suppliers_data(cur, suppliers: list[dict]) -> None:
-    """Добавляет данные из suppliers в таблицу suppliers."""
-    pass
+    """
+    Добавляет данные из suppliers в таблицу suppliers.
+    :param cur: курсор
+    :param suppliers: список со словарями
+    :return: None
+    """
+    for supplier in suppliers:
+        for i in range(len(supplier['products'])):
+            cur.execute("INSERT INTO suppliers (company_name, contact, address, phone, fax, homepage, products) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        (supplier['company_name'], supplier['contact'], supplier['address'], supplier['phone'],
+                         supplier['fax'], supplier['homepage'], supplier['products'][i]))
 
 
 def add_foreign_keys(cur, json_file) -> None:
