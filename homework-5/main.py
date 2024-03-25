@@ -11,7 +11,6 @@ def main():
     db_name = 'my_new_db'
 
     params = config()
-    conn = None
 
     create_database(params, db_name)
     print(f"БД {db_name} успешно создана")
@@ -41,8 +40,25 @@ def main():
 
 
 def create_database(params, db_name) -> None:
-    """Создает новую базу данных."""
-    pass
+    """
+    Создает новую базу данных.
+    :param params: параметры для подключения
+    :param db_name: имя базы данных
+    :return: None
+    """
+    conn = None
+    try:
+        conn = psycopg2.connect(**params)
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute(f"CREATE DATABASE {db_name}")
+    except (Exception, psycopg2.DatabaseError) as error:
+        conn.rollback()
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+
 
 def execute_sql_script(cur, script_file) -> None:
     """Выполняет скрипт из файла для заполнения БД данными."""
