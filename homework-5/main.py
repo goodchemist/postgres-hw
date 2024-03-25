@@ -87,6 +87,7 @@ def create_suppliers_table(cur) -> None:
     :return: None
     """
     cur.execute("""CREATE TABLE IF NOT EXISTS suppliers (
+    supplier_id serial NOT NULL,
     company_name varchar(100) NOT NULL,
     contact varchar(100) NOT NULL,
     address varchar(100) NOT NULL,
@@ -116,12 +117,12 @@ def insert_suppliers_data(cur, suppliers: list[dict]) -> None:
     :param suppliers: список со словарями
     :return: None
     """
-    for supplier in suppliers:
-        for i in range(len(supplier['products'])):
-            cur.execute("INSERT INTO suppliers (company_name, contact, address, phone, fax, homepage, products) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                        (supplier['company_name'], supplier['contact'], supplier['address'], supplier['phone'],
-                         supplier['fax'], supplier['homepage'], supplier['products'][i]))
+    for j, supplier in enumerate(suppliers, start=1):
+        for product in supplier['products']:
+            cur.execute("INSERT INTO suppliers (supplier_id, company_name, contact, address, phone, fax, homepage, "
+                        "products) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        (j, supplier['company_name'], supplier['contact'], supplier['address'], supplier['phone'],
+                         supplier['fax'], supplier['homepage'], product))
 
 
 def add_foreign_keys(cur, json_file) -> None:
