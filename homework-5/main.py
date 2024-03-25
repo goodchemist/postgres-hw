@@ -87,14 +87,16 @@ def create_suppliers_table(cur) -> None:
     :return: None
     """
     cur.execute("""CREATE TABLE IF NOT EXISTS suppliers (
-    supplier_id serial NOT NULL,
+    supplier_id serial,
     company_name varchar(100) NOT NULL,
     contact varchar(100) NOT NULL,
     address varchar(100) NOT NULL,
     phone varchar(30) NOT NULL,
     fax varchar(30) NOT NULL,
     homepage varchar(100) NOT NULL,
-    products text NOT NULL
+    products text NOT NULL,
+    
+    CONSTRAINT pk_supplier_id PRIMARY KEY(supplier_id)
     )
     """)
 
@@ -134,7 +136,6 @@ def add_foreign_keys(cur) -> None:
     cur.execute("ALTER TABLE products ADD COLUMN supplier_id int")
     cur.execute("UPDATE products SET supplier_id = (SELECT s.supplier_id FROM suppliers s "
                 "WHERE products.product_name IN (SELECT unnest(string_to_array(s.products, ', '))) LIMIT 1)")
-    cur.execute("ALTER TABLE suppliers ADD CONSTRAINT unique_supplier_id UNIQUE (supplier_id)")
     cur.execute(
         "ALTER TABLE products ADD CONSTRAINT fk_supplier_id FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)")
 
